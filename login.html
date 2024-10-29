@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Login Page</title>
+      <!-- Favicons -->
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <!-- SweetAlert Library -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    *{
+      font-family: "Times New Roman";
+    }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('assets/img/slide/slide-3.jpg'); /* Insert your image URL here */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .form-container {
+            width: 400px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9); /* White with transparency */
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 128, 0, 0.2); /* Green shadow */
+            border-top: 5px solid #28a745; /* Green border at the top */
+        }
+        .btn-success, .btn-primary {
+            background-color: #28a745; /* Green color for buttons */
+            border-color: #28a745;
+        }
+        .btn-success:hover, .btn-primary:hover {
+            background-color: #218838; /* Darker green on hover */
+            border-color: #218838;
+        }
+        .btn-link {
+            color: #28a745; /* Green link color */
+        }
+        .btn-link:hover {
+            color: #218838; /* Darker green on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container" id="form-container">
+        <!-- Registration Form -->
+        <div id="register-form" style="display: none;">
+            <h2 class="text-center" style="color: #28a745;">Register</h2>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-success btn-block" onclick="register()">Register</button>
+                <button type="button" class="btn btn-link btn-block" onclick="toggleForms()">Already have an account? Login</button>
+            </form>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form">
+            <h2 class="text-center" style="color: #28a745;">Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="login()">Login</button>
+                <button type="button" class="btn btn-link btn-block" onclick="toggleForms()">Don't have an account? Register</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdzQP6n7gw8T82h2Qg-cLfnLbEqJ4WONg",
+            authDomain: "caps-62ee2.firebaseapp.com",
+            databaseURL: "https://caps-62ee2-default-rtdb.firebaseio.com",
+            projectId: "caps-62ee2",
+            storageBucket: "caps-62ee2.appspot.com",
+            messagingSenderId: "407248916382",
+            appId: "1:407248916382:web:104a66db2e652789e2d08f",
+            measurementId: "G-2Y9GYDHFVM"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        function toggleForms() {
+            $('#register-form').toggle();
+            $('#login-form').toggle();
+        }
+
+        function register() {
+            const email = $('#register-email').val();
+            const password = $('#register-password').val();
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    const user = userCredential.user;
+                    // Send verification email
+                    user.sendEmailVerification().then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Registration successful!',
+                            text: 'A verification email has been sent. Please verify your email before logging in.',
+                            confirmButtonText: 'OK'
+                        });
+                        $('#register-form').hide();
+                        $('#login-form').show();
+                    });
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Registration failed',
+                        text: error.message
+                    });
+                });
+        }
+
+        function login() {
+            const email = $('#login-email').val();
+            const password = $('#login-password').val();
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    const user = userCredential.user;
+                    // Check if email is verified
+                    if (user.emailVerified) {
+                        // Redirect to index.html after successful login
+                        window.location.href = 'index.html';
+                    } else {
+                        // Sign out the user if the email is not verified
+                        auth.signOut();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Email Not Verified',
+                            text: 'Please verify your email address before logging in. A verification email has been sent to your registered email address.',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login failed',
+                        text: error.message
+                    });
+                });
+        }
+
+        $(document).ready(function () {
+            $('#login-form').show(); // Show the login form first
+            $('#register-form').hide();
+        });
+    </script>
+</body>
+</html>

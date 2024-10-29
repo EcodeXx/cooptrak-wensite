@@ -27,12 +27,14 @@
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
 
-  <!-- =======================================================
-  * Template Name: Green - v2.3.1
-  * Template URL: https://bootstrapmade.com/green-free-one-page-bootstrap-template/
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <!-- SweetAlert Library -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -74,7 +76,8 @@
         </ul>
       </nav><!-- .nav-menu -->
 
-      <a href="#about" class="get-started-btn scrollto">Get Started</a>
+    <!-- Login/Logout Button -->
+    <a href="login.html" id="authButton" class="get-started-btn scrollto">Login</a>
 
     </div>
   </header><!-- End Header -->
@@ -602,36 +605,124 @@
           </div>
 
           <div class="col-lg-7 mt-5 mt-lg-0 d-flex align-items-stretch">
-            <form action="forms/contact.php" method="post" role="form" class="php-email-form">
-              <div class="form-row">
+<div class="form-container">
+        <h2 class="text-center">Contact Us</h2>
+        <form id="contactForm" class="php-email-form">
+            <div class="form-row">
                 <div class="form-group col-md-6">
-                  <label for="name">Your Name</label>
-                  <input type="text" name="name" class="form-control" id="name" data-rule="minlen:4" data-msg="Please enter at least 4 chars" />
-                  <div class="validate"></div>
+                    <label for="name">Your Name</label>
+                    <input type="text" name="name" class="form-control" id="name" required />
                 </div>
                 <div class="form-group col-md-6">
-                  <label for="name">Your Email</label>
-                  <input type="email" class="form-control" name="email" id="email" data-rule="email" data-msg="Please enter a valid email" />
-                  <div class="validate"></div>
+                    <label for="email">Your Email</label>
+                    <input type="email" class="form-control" name="email" id="email" required />
                 </div>
-              </div>
-              <div class="form-group">
-                <label for="name">Subject</label>
-                <input type="text" class="form-control" name="subject" id="subject" data-rule="minlen:4" data-msg="Please enter at least 8 chars of subject" />
-                <div class="validate"></div>
-              </div>
-              <div class="form-group">
-                <label for="name">Message</label>
-                <textarea class="form-control" name="message" rows="10" data-rule="required" data-msg="Please write something for us"></textarea>
-                <div class="validate"></div>
-              </div>
-              <div class="mb-3">
-                <div class="loading">Loading</div>
-                <div class="error-message"></div>
-                <div class="sent-message">Your message has been sent. Thank you!</div>
-              </div>
-              <div class="text-center"><button type="submit">Send Message</button></div>
-            </form>
+            </div>
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" class="form-control" name="subject" id="subject" required />
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea class="form-control" name="message" rows="10" id="message" required></textarea>
+            </div>
+            <div class="text-center">
+                <button type="button" class="btn btn-primary" onclick="submitMessage()">Send Message</button>
+            </div>
+            
+        </form>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdzQP6n7gw8T82h2Qg-cLfnLbEqJ4WONg",
+            authDomain: "caps-62ee2.firebaseapp.com",
+            databaseURL: "https://caps-62ee2-default-rtdb.firebaseio.com",
+            projectId: "caps-62ee2",
+            storageBucket: "caps-62ee2.appspot.com",
+            messagingSenderId: "407248916382",
+            appId: "1:407248916382:web:104a66db2e652789e2d08f",
+            measurementId: "G-2Y9GYDHFVM"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Check if user is logged in
+        let currentUser = null;
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            document.getElementById("loginAlert").classList.toggle("hidden", !!user);
+        });
+
+        function submitMessage() {
+            if (!currentUser) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Required',
+                    text: 'You need to be logged in to send a message.'
+                });
+                return;
+            }
+
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const subject = document.getElementById("subject").value;
+            const message = document.getElementById("message").value;
+
+            // Save message data to Firestore
+            db.collection("messages").add({
+                userId: currentUser.uid,
+                name: name,
+                email: email,
+                subject: subject,
+                message: message,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Message Sent',
+                    text: 'Your message has been sent successfully!'
+                });
+                document.getElementById("contactForm").reset();
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'There was an error sending your message. Please try again.'
+                });
+                console.error("Error writing document: ", error);
+            });
+        }
+                // Listen for authentication state changes
+        auth.onAuthStateChanged(user => {
+            const authButton = document.getElementById("authButton");
+
+            if (user) {
+                // If user is logged in, change the button to "Logout"
+                authButton.textContent = "Logout";
+                authButton.href = "#";
+                authButton.onclick = () => {
+                    auth.signOut().then(() => {
+                        // Optionally, reload the page or redirect
+                        window.location.reload();
+                    }).catch(error => {
+                        console.error("Sign-out error:", error);
+                    });
+                };
+            } else {
+                // If user is logged out, keep the button as "Login"
+                authButton.textContent = "Login";
+                authButton.href = "login.html";
+                authButton.onclick = null;  // Remove any previous onClick event
+            }
+        });
+    </script>    
           </div>
 
         </div>
